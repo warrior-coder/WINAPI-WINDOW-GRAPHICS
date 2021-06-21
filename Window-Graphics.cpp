@@ -1,5 +1,7 @@
 ﻿#include <windows.h>
 #include <cmath>
+#define ABS(a) ( (a) < 0 ? -(a) : (a) )
+#define PI 3.14159265358979323846
 
 typedef struct
 {
@@ -47,6 +49,7 @@ private:
 public:
     short width;
     short height;
+    RGB pen_color = {};
     
     FRAME(short frameWidth, short frameHeight)
     {
@@ -76,55 +79,124 @@ public:
         }
     }
 
-    void set_pixel(DOT_2D dot, RGB color = { 0, 0, 0 })
+    void set_pixel(short x, short y)
     {
-        int i = dot.y * width + dot.x;
+        int i = y * width + x;
 
         if (i < height * width)
         {
-            buffer[i].R = color.R;
-            buffer[i].G = color.G;
-            buffer[i].B = color.B;
+            buffer[i].R = pen_color.R;
+            buffer[i].G = pen_color.G;
+            buffer[i].B = pen_color.B;
         }
     }
 
-    void set_line(DOT_2D dot1, DOT_2D dot2, RGB color = { 0, 0, 0 })
+    void set_line_OF2(short x1, short y1, short x2, short y2)
     {
         float x, y;
-        DOT_2D dot;
 
-        if (abs(dot2.x - dot1.x) > abs(dot2.y - dot1.y))
+        if (ABS(x2 - x1) > ABS(y2 - y1))
         {
-            // Render though X
-            if (dot1.x > dot2.x)
+            if (x1 > x2)
             {
-                DOT_2D temp = dot1;
-                dot1 = dot2;
-                dot2 = temp;
+                short tmp = x1; x1 = x2; x2 = tmp;
+                tmp = y1; y1 = y2; y2 = tmp;
             }
-            for (x = dot1.x; x < dot2.x; x++)
+            for (x = x1; x < x2; x++)
             {
-                y = (x - dot1.x) / (dot2.x - dot1.x) * (dot2.y - dot1.y) + dot1.y;
-                dot.x = floor(x);
-                dot.y = floor(y);
-                set_pixel(dot, color);
+                y = (x - x1) / (x2 - x1) * (y2 - y1) + y1;
+                set_pixel((short)x, (short)y);
             }
         }
         else
         {
-            // Render though Y
-            if (dot1.y > dot2.y)
+            if (y1 > y2)
             {
-                DOT_2D temp = dot1;
-                dot1 = dot2;
-                dot2 = temp;
+                short tmp = y1; y1 = y2; y2 = tmp;
+                tmp = x1; x1 = x2; x2 = tmp;
             }
-            for (y = dot1.y; y < dot2.y; y++)
+            for (y = y1; y < y2; y++)
             {
-                x = (y - dot1.y) / (dot2.y - dot1.y) * (dot2.x - dot1.x) + dot1.x;
-                dot.x = floor(x);
-                dot.y = floor(y);
-                set_pixel(dot, color);
+                x = (y - y1) / (y2 - y1) * (x2 - x1) + x1;
+                set_pixel((short)x, (short)y);
+            }
+        }
+    }
+
+    void set_line_BRESENHAM(short x1, short y1, short x2, short y2)
+    {
+        short dx = ABS(x2 - x1);        // Absolute delta X
+        short dy = ABS(y2 - y1);        // Absolute delta Y
+        short sx = (x2 >= x1) ? 1 : -1; // Step X
+        short sy = (y2 >= y1) ? 1 : -1; // Step Y
+
+        if (dx > dy)
+        {
+            short d = (dy << 1) - dx, d1 = dy << 1, d2 = (dy - dx) << 1;
+
+            for (short x = x1+sx, y = y1, i = 1; i < dx; i++, x += sx)
+            {
+                if (d > 0)
+                {
+                    d += d2;
+                    y += sy;
+                }
+                else d += d1;
+
+                set_pixel(x ,y);
+            }
+        }
+        else
+        {
+            short d = (dx << 1) - dy, d1 = dx << 1, d2 = (dx - dy) << 1;
+
+            for (short x = x1, y = y1+sy, i = 1; i < dy; i++, y += sy)
+            {
+                if (d > 0)
+                {
+                    d += d2;
+                    x += sx;
+                }
+                else d += d1;
+
+                set_pixel(x, y);
+            }
+        }
+
+        set_pixel(x1, y1);
+        set_pixel(x2, y2);
+    }
+
+    void set_line_DDL(short x1, short y1, short x2, short y2)
+    {
+        if (ABS(x2 - x1) > ABS(y2 - y1))
+        {
+            if (x1 > x2)
+            {
+                short tmp = x1; x1 = x2; x2 = tmp;
+                tmp = y1; y1 = y2; y2 = tmp;
+            }
+
+            float y = y1, stepY = (float)(y2 - y1) / (float)(x2 - x1);
+
+            for (short x = x1; x <= x2; x++, y += stepY)
+            {
+                set_pixel( x, (short)y);
+            }
+        }
+        else
+        {
+            if (y1 > y2)
+            {
+                short tmp = y1; y1 = y2; y2 = tmp;
+                tmp = x1; x1 = x2; x2 = tmp;
+            }
+
+            float x = x1, stepX = (float)(x2 - x1) / (float)(y2 - y1);
+
+            for (short y = y1; y <= y2; y++, x += stepX)
+            {
+                set_pixel((short)x, y);
             }
         }
     }
@@ -173,11 +245,11 @@ public:
 
 int main()
 {
-    FRAME frame(400, 400);
-    
+    FRAME frame(417, 440);
+
     // Handle to the application instance
     HINSTANCE hInstance = GetModuleHandleW(nullptr);
-    
+
     // Register the window class
     WNDCLASS wc = {};
     wc.lpfnWndProc = WindowProc;
@@ -186,8 +258,8 @@ int main()
     RegisterClassW(&wc);
 
     // Create the window
-    g_hwnd = CreateWindowExW(0, L"MyWindow", L"My Window", WS_OVERLAPPED | WS_SYSMENU, CW_USEDEFAULT, CW_USEDEFAULT, frame.width, frame.height, nullptr, nullptr, hInstance, nullptr);
-    
+    g_hwnd = CreateWindowExW(0, L"MyWindow", L"My Window", WS_OVERLAPPED | WS_SYSMENU, 0, 0, frame.width, frame.height, nullptr, nullptr, hInstance, nullptr);
+
     // Show the window
     ShowWindow(g_hwnd, SW_SHOWNORMAL);
     //ShowWindow(GetConsoleWindow(), SW_SHOWNORMAL); // SW_HIDE or SW_SHOWNORMAL - Hide or Show console
@@ -197,11 +269,22 @@ int main()
 
     // Frame draw
     frame.clear();
-    frame.set_pixel({ 50, 50 });
-    frame.set_line({ 100, 50 }, { 200, 200 });
-    frame.set_line({ 250, 100 }, { 50, 300 });
-    frame.print();
+    frame.pen_color = { 0, 255, 0 };
 
+    BYTE r = 255, g = 1, b = 1;
+    for (short i = 0; i < 360; i++)
+    {
+        frame.pen_color = { r,g,b };
+
+        short x2 = (short)(200 + 200 * cos(i / 180. * PI));
+        short y2 = (short)(200 + 200 * sin(i / 180. * PI));
+        frame.set_line_BRESENHAM(200, 200, x2, y2);
+
+        if (b < 254) { b ++; r--; }
+    }
+    
+    frame.print();
+    
     // Main loop
     while (GetKeyState(VK_ESCAPE) >= 0)
     {
@@ -210,8 +293,8 @@ int main()
         {
             DispatchMessageW(&msg);
             if (msg.message == WM_QUIT) break;
-
         }
     }
+
     return 0;
 }
