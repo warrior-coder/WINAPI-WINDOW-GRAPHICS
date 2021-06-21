@@ -1,5 +1,4 @@
 ﻿#include <windows.h>
-#include <cmath>
 #define ABS(a) ( (a) < 0 ? -(a) : (a) )
 #define PI 3.14159265358979323846
 
@@ -79,6 +78,48 @@ public:
         }
     }
 
+    void clear(char COMMAND)
+    {
+        if (COMMAND == -1)
+        {
+            int i;
+
+            for (short y = 0; y < height; y++)
+            {
+                for (short x = 0; x < width; x++)
+                {
+                    i = y * width + x;
+
+                    buffer[i].R = (BYTE)(255 - (float)x / width * 255);
+                    buffer[i].G = (BYTE)((float)x / width * 255);
+                    buffer[i].B = (BYTE)((float)y / height * 255);
+                }
+            }
+        }
+    }
+
+    void set_rect(short x1, short y1, short x2, short y2)
+    {
+        for (short y = y1; y <= y2; y++)
+        {
+            for (short x = x1; x <= x2; x++)
+            {
+                set_pixel(x, y);
+            }
+        }
+    }
+
+    void set_circle(short x0, short y0, short R)
+    {
+        for (short x = x0 - R; x < x0 + R; x++)
+        {
+            for (short y = y0 - R; y < y0 + R; y++)
+            {
+                if (((x-x0)*(x-x0) + (y-y0)*(y-y0) - R*R) < 0) set_pixel(x, y);
+            }
+        }
+    }
+
     void set_pixel(short x, short y)
     {
         int i = y * width + x;
@@ -91,39 +132,7 @@ public:
         }
     }
 
-    void set_line_OF2(short x1, short y1, short x2, short y2)
-    {
-        float x, y;
-
-        if (ABS(x2 - x1) > ABS(y2 - y1))
-        {
-            if (x1 > x2)
-            {
-                short tmp = x1; x1 = x2; x2 = tmp;
-                tmp = y1; y1 = y2; y2 = tmp;
-            }
-            for (x = x1; x < x2; x++)
-            {
-                y = (x - x1) / (x2 - x1) * (y2 - y1) + y1;
-                set_pixel((short)x, (short)y);
-            }
-        }
-        else
-        {
-            if (y1 > y2)
-            {
-                short tmp = y1; y1 = y2; y2 = tmp;
-                tmp = x1; x1 = x2; x2 = tmp;
-            }
-            for (y = y1; y < y2; y++)
-            {
-                x = (y - y1) / (y2 - y1) * (x2 - x1) + x1;
-                set_pixel((short)x, (short)y);
-            }
-        }
-    }
-
-    void set_line_BRESENHAM(short x1, short y1, short x2, short y2)
+    void set_line(short x1, short y1, short x2, short y2)
     {
         short dx = ABS(x2 - x1);        // Absolute delta X
         short dy = ABS(y2 - y1);        // Absolute delta Y
@@ -165,40 +174,6 @@ public:
 
         set_pixel(x1, y1);
         set_pixel(x2, y2);
-    }
-
-    void set_line_DDL(short x1, short y1, short x2, short y2)
-    {
-        if (ABS(x2 - x1) > ABS(y2 - y1))
-        {
-            if (x1 > x2)
-            {
-                short tmp = x1; x1 = x2; x2 = tmp;
-                tmp = y1; y1 = y2; y2 = tmp;
-            }
-
-            float y = y1, stepY = (float)(y2 - y1) / (float)(x2 - x1);
-
-            for (short x = x1; x <= x2; x++, y += stepY)
-            {
-                set_pixel( x, (short)y);
-            }
-        }
-        else
-        {
-            if (y1 > y2)
-            {
-                short tmp = y1; y1 = y2; y2 = tmp;
-                tmp = x1; x1 = x2; x2 = tmp;
-            }
-
-            float x = x1, stepX = (float)(x2 - x1) / (float)(y2 - y1);
-
-            for (short y = y1; y <= y2; y++, x += stepX)
-            {
-                set_pixel((short)x, y);
-            }
-        }
     }
 
     void print()
@@ -245,7 +220,7 @@ public:
 
 int main()
 {
-    FRAME frame(417, 440);
+    FRAME frame(400, 400);
 
     // Handle to the application instance
     HINSTANCE hInstance = GetModuleHandleW(nullptr);
@@ -268,21 +243,14 @@ int main()
     MSG msg = {};
 
     // Frame draw
-    frame.clear();
-    frame.pen_color = { 0, 255, 0 };
+    frame.clear(-1);
+    frame.pen_color = { 255,255,255 };
+    frame.set_circle(frame.width/2, frame.height/2, 50);
+    frame.set_rect(10, 10, 60, 60);
+    frame.set_line(350, 10, 350, 200);
+    frame.set_line(350, 200, 200, 10);
+    frame.set_line(200, 10, 350, 10);
 
-    BYTE r = 255, g = 1, b = 1;
-    for (short i = 0; i < 360; i++)
-    {
-        frame.pen_color = { r,g,b };
-
-        short x2 = (short)(200 + 200 * cos(i / 180. * PI));
-        short y2 = (short)(200 + 200 * sin(i / 180. * PI));
-        frame.set_line_BRESENHAM(200, 200, x2, y2);
-
-        if (b < 254) { b ++; r--; }
-    }
-    
     frame.print();
     
     // Main loop
