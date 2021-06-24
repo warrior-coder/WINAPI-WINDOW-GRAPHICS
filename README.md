@@ -5,7 +5,7 @@ The basic library of window graphics in clear C++. Using drawing methods, you ca
 ![pixels](Examples/pixels.bmp)
 
 ## Lines ##
-![lines](Examples\lines.bmp)
+![lines](Examples/lines.bmp)
 
 ## Triangles ##
-![triangles](Examples\triangles.bmp)
+![triangles](Examples/triangles.bmp)
