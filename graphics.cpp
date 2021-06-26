@@ -27,6 +27,7 @@ FRAME::~FRAME()
 void FRAME::clear(RGB color)
 {
     int i;
+
     for (short y = 0; y < height; y++)
     {
         for (short x = 0; x < width; x++)
@@ -41,10 +42,10 @@ void FRAME::clear(RGB color)
 
 void FRAME::set_pixel(short x, short y)
 {
-    int i = y * width + x;
-
-    if (i < height * width)
+    if (x > -1 && y > -1 && x < width && y < height)
     {
+        int i = y * width + x;
+        
         buffer[i].R = pen_color.R;
         buffer[i].G = pen_color.G;
         buffer[i].B = pen_color.B;
@@ -158,15 +159,15 @@ void FRAME::print()
 
     // Bit Built transfers a rectangle of pixels from one DC into another
     BitBlt(
-        hdc,   // Destination DC
-        0,       // X begin of destination rect
-        0,       // Y begin of destination rect
-        width,   // Width of the source and destination rect
-        height,  // Height of the source and destination rect
-        tmpDc, // Sourse DC
-        0,       // X begin of source rect
-        0,       // Y begin of source rect
-        SRCCOPY  // Source copy mode
+        hdc,    // Destination DC
+        0,      // X begin of destination rect
+        0,      // Y begin of destination rect
+        width,  // Width of the source and destination rect
+        height, // Height of the source and destination rect
+        tmpDc,  // Sourse DC
+        0,      // X begin of source rect
+        0,      // Y begin of source rect
+        SRCCOPY // Source copy mode
     );
 
     // Clear bitmap memory
@@ -297,4 +298,14 @@ void FRAME::save(const char* fname)
 
         fclose(fp);
     }
+}
+
+void FRAME::load(LPCWSTR fname, short x, short y, short imageWidth, short imageHeight)
+{
+    hbm = (HBITMAP)LoadImageW(NULL, fname, IMAGE_BITMAP, imageWidth, imageWidth, LR_LOADFROMFILE);
+    
+    SelectObject( tmpDc, hbm );
+    BitBlt(hdc, x, y, width, height, tmpDc, 0, 0, SRCCOPY);
+
+    DeleteObject(hbm);
 }

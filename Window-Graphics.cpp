@@ -4,48 +4,51 @@
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     if (uMsg == WM_DESTROY) PostQuitMessage(0);
-    return DefWindowProcW(hwnd, uMsg, wParam, lParam);
+    return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
 int main()
 {
-    // Handle to the application instance
-    HINSTANCE hInstance = GetModuleHandleW(nullptr);
-
     // Register the window class
     WNDCLASS wc = {};
+    HINSTANCE hInstance = GetModuleHandle(nullptr);
+    const wchar_t CLASS_NAME[] = L"WindowClass";
+
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = hInstance;
-    wc.lpszClassName = L"MyWindow";
-    RegisterClassW(&wc);
+    wc.lpszClassName = CLASS_NAME;
+
+    RegisterClass(&wc);
 
     // Create the window
     const short windowWidth = 400;
     const short windowHeight = 400;
-    HWND hwnd = CreateWindowExW(0, L"MyWindow", L"My Window", WS_OVERLAPPED | WS_SYSMENU, 0, 0, windowWidth, windowHeight, nullptr, nullptr, hInstance, nullptr);
+    HWND hwnd = CreateWindow(CLASS_NAME, L"Window Graphics", WS_OVERLAPPEDWINDOW, 0, 0, windowWidth+16, windowHeight+39, nullptr, nullptr, hInstance, nullptr);
     
-    // Show the window
     ShowWindow(hwnd, SW_SHOWNORMAL);
     //ShowWindow(GetConsoleWindow(), SW_SHOWNORMAL); // SW_HIDE or SW_SHOWNORMAL - Hide or Show console
 
     // Window message
     MSG msg = {};
 
-    /* Frame draw */
+    /** FRAME DRAW **/
     FRAME frame(windowWidth, windowHeight, hwnd);
-    frame.clear();
+    frame.clear({ 0,255,255 });
+    frame.pen_color = { 255,255,0 };
+    frame.set_circle(200, 200, 200);
     frame.print();
 
-    // Main loop
-    int i = 0;
+    /** MAIN LOOP **/
     while (GetKeyState(VK_ESCAPE) >= 0)
     {
         // Processing window messages
-        if (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
+        if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
         {
-            DispatchMessageW(&msg);
+            DispatchMessage(&msg);
             if (msg.message == WM_QUIT) break;
-        }  
+        }
+
+        // Code ...
     }
     
     return 0;

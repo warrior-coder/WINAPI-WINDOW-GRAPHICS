@@ -6,6 +6,9 @@
 // Include using libs
 #include <windows.h>
 #include <stdio.h>
+#include <iostream>
+using std::cout;
+using std::endl;
 
 // Define macroses
 #define ABS(a) ( (a) < 0 ? -(a) : (a) )
@@ -30,12 +33,6 @@ typedef struct
     BYTE R;
     BYTE A;
 }RGB4;
-
-typedef struct
-{
-    short x;
-    short y;
-}DOT_2D;
 
 class FRAME
 {
@@ -72,6 +69,7 @@ public:
     void set_triangle(int x1, int y1, int x2, int y2, int x3, int y3);
     void print();
     void save(const char* fname);
+    void load(LPCWSTR fname, short x, short y, short imageWidth = 0, short imageHeight = 0);
 };
 
 #endif
